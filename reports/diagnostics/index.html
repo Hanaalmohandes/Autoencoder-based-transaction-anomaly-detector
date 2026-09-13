@@ -1,0 +1,2256 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width">
+    <title>Fraud detector diagnostic report</title><style>
+    body{font:16px/1.55 system-ui,sans-serif;max-width:1200px;margin:40px auto;padding:0 24px;color:#182331;background:#fafbfc}
+    h1{font-size:28px}h2{font-size:21px;margin-top:36px}table{border-collapse:collapse;width:100%;font-size:13px}
+    th,td{padding:9px;text-align:left;border-bottom:1px solid #d9dfe5}th{background:#edf1f4;position:sticky;top:0}
+    .note{border-left:4px solid #087e8b;padding:10px 18px;background:#edf6f6}img{width:100%;height:auto}
+    .scroll{overflow:auto;max-height:550px}a{color:#086778}small{color:#536170}</style>
+    <h1>Fraud detection: 53 of 74 caught at 0.0565% FPR</h1>
+    <p class="note"><b>Exploratory, reused test.</b> The 71.6% recall result exceeds the requested 70% target at the unchanged 0.1% FPR limit.
+    Feature selection uses fitting-period fraud labels. Model weights use only normal rows. This is label-informed anomaly detection;
+    it is not an entirely unsupervised pipeline, and it needs confirmation on new data.</p>
+    <h2>Before / after and a fairly tuned baseline</h2><table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>Model</th>
+      <th>Fraud caught / 74</th>
+      <th>Missed</th>
+      <th>Recall</th>
+      <th>Precision</th>
+      <th>False alerts</th>
+      <th>FPR</th>
+      <th>F1</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>16</td>
+      <td>58</td>
+      <td>21.62%</td>
+      <td>29.63%</td>
+      <td>38</td>
+      <td>0.0671%</td>
+      <td>0.250</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>53</td>
+      <td>21</td>
+      <td>71.62%</td>
+      <td>62.35%</td>
+      <td>32</td>
+      <td>0.0565%</td>
+      <td>0.667</td>
+    </tr>
+    <tr>
+      <td>Tuned Isolation Forest, label-informed inputs</td>
+      <td>40</td>
+      <td>34</td>
+      <td>54.05%</td>
+      <td>54.05%</td>
+      <td>34</td>
+      <td>0.0600%</td>
+      <td>0.541</td>
+    </tr>
+  </tbody>
+</table>
+    <p>Same 56,746 test transactions, 74 frauds. Inputs and thresholds were selected on development periods.
+    Both models received feature-subset and hyperparameter searches. The previous result is exactly 16/74, not approximately 14/70.</p>
+    <h2>What changed</h2><p>The prior score averaged 29 feature errors, including weak fraud indicators.
+    The selected model uses eight historically informative inputs and caps squared residual contributions at 9.
+    The architecture and threshold were chosen using separate early-stopping, calibration, and selection periods.
+    The complete search and selected configuration are recorded in the accompanying JSON reports.</p>
+    <h2>Where missed fraud overlaps legitimate behavior</h2><img src="score-distributions.png" alt="Anomaly score distributions by legitimate, detected fraud and missed fraud groups">
+    <p>The overlap is descriptive evidence of the remaining difficulty; it is not proof that higher recall is impossible.
+    Raw reconstruction errors and clipped anomaly scores are distinct. The case table records both.</p>
+    <img src="raw-error-distributions.png" alt="Raw reconstruction error distributions before clipping, by outcome">
+    <p>The 21 remaining missed frauds have median anomaly score 0.968, compared with 0.544 for legitimate transactions
+    and 7.148 for detected frauds. Their median raw V14 squared residual is 0.318, versus 0.204 for legitimate transactions
+    and 48.621 for detected frauds. Many of these cases look relatively normal in the selected feature space;
+    this is not evidence that they are non-fraudulent.</p>
+    <h2>Ranking and operating trade-offs</h2><img src="roc-pr.png" alt="ROC near the FPR cap and precision recall curves">
+    <h2>Pure model score alternatives: development only</h2><table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>Score</th>
+      <th>Selection recall</th>
+      <th>Selection FPR</th>
+      <th>Meets FPR cap</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>mean_mse</td>
+      <td>0.00%</td>
+      <td>0.1341%</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <td>capped_mse_4</td>
+      <td>0.00%</td>
+      <td>0.0176%</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>standardized_residual</td>
+      <td>0.00%</td>
+      <td>0.1200%</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <td>robust_z_log</td>
+      <td>24.24%</td>
+      <td>0.1129%</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <td>percentile_tail</td>
+      <td>18.18%</td>
+      <td>0.1094%</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <td>top3_percentile_tail</td>
+      <td>0.00%</td>
+      <td>0.0917%</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>top3_mse</td>
+      <td>0.00%</td>
+      <td>0.0212%</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>max_mse</td>
+      <td>0.00%</td>
+      <td>0.0176%</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>mean_max_blend</td>
+      <td>0.00%</td>
+      <td>0.0176%</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>residual_mahalanobis</td>
+      <td>0.00%</td>
+      <td>0.0988%</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>latent_mahalanobis</td>
+      <td>0.00%</td>
+      <td>0.0000%</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>residual_latent_blend</td>
+      <td>0.00%</td>
+      <td>0.0917%</td>
+      <td>True</td>
+    </tr>
+  </tbody>
+</table>
+    <p>All score normalization and covariance statistics use normal fitting rows only. For each scorer, every distinct calibration threshold
+    was evaluated; choose maximum recall at FPR ≤ 0.001, then maximum precision. Selection FPR can exceed calibration FPR under shift.
+    These alternatives have not been evaluated or selected on test labels and do not replace the frozen improved model.</p>
+    <h2>Architecture search: development results</h2><table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>Inputs</th>
+      <th>Bottleneck</th>
+      <th>Activation</th>
+      <th>Selection recall</th>
+      <th>Selection FPR</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>4</td>
+      <td>2</td>
+      <td>relu</td>
+      <td>9.09%</td>
+      <td>0.0494%</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>2</td>
+      <td>tanh</td>
+      <td>15.15%</td>
+      <td>0.0565%</td>
+    </tr>
+    <tr>
+      <td>8</td>
+      <td>2</td>
+      <td>relu</td>
+      <td>78.79%</td>
+      <td>0.0917%</td>
+    </tr>
+    <tr>
+      <td>8</td>
+      <td>2</td>
+      <td>tanh</td>
+      <td>69.70%</td>
+      <td>0.0670%</td>
+    </tr>
+    <tr>
+      <td>8</td>
+      <td>4</td>
+      <td>relu</td>
+      <td>27.27%</td>
+      <td>0.0988%</td>
+    </tr>
+    <tr>
+      <td>8</td>
+      <td>4</td>
+      <td>tanh</td>
+      <td>39.39%</td>
+      <td>0.0812%</td>
+    </tr>
+    <tr>
+      <td>29</td>
+      <td>8</td>
+      <td>relu</td>
+      <td>9.09%</td>
+      <td>0.0882%</td>
+    </tr>
+    <tr>
+      <td>29</td>
+      <td>8</td>
+      <td>tanh</td>
+      <td>6.06%</td>
+      <td>0.0988%</td>
+    </tr>
+  </tbody>
+</table>
+    <p>All candidates use 24-unit hidden layers on either side of the bottleneck and a linear output. Smaller input sets use
+    label-informed feature selection. Each row shows its best eligible scoring/threshold configuration. The selected network is
+    8 → 24 → 2 → 24 → 8 with ReLU hidden activations. Lower normal reconstruction loss alone did not identify the strongest detector.</p>
+    <h2>Training ablations: development only</h2><table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>Training variant</th>
+      <th>Normal fitting rows</th>
+      <th>Selection recall</th>
+      <th>Selection FPR</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>L2 regularization</td>
+      <td>135928</td>
+      <td>78.79%</td>
+      <td>0.0953%</td>
+    </tr>
+    <tr>
+      <td>Denoising dropout plus L2</td>
+      <td>135928</td>
+      <td>9.09%</td>
+      <td>0.0882%</td>
+    </tr>
+    <tr>
+      <td>25% normal subset; lower LR; smaller batch; longer patience</td>
+      <td>33982</td>
+      <td>78.79%</td>
+      <td>0.0635%</td>
+    </tr>
+  </tbody>
+</table>
+    <p>L2 did not improve recall; denoising dropout reduced it. The smaller training subset with changed optimization matched recall
+    with fewer development false positives, but was not tested on the reused test set or promoted over the frozen model.
+    That combined ablation cannot isolate the effect of subset size from learning rate, batch size, or patience.</p>
+    <h2>Normal-data shift: five largest KS distances</h2><table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>feature</th>
+      <th>normal_fit_vs_test_KS</th>
+      <th>fit_median</th>
+      <th>test_median</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>V3</td>
+      <td>0.5348</td>
+      <td>0.7536</td>
+      <td>-0.7196</td>
+    </tr>
+    <tr>
+      <td>V1</td>
+      <td>0.4210</td>
+      <td>-0.2578</td>
+      <td>0.0975</td>
+    </tr>
+    <tr>
+      <td>V28</td>
+      <td>0.3571</td>
+      <td>0.0236</td>
+      <td>-0.0279</td>
+    </tr>
+    <tr>
+      <td>V25</td>
+      <td>0.3210</td>
+      <td>0.1676</td>
+      <td>-0.2166</td>
+    </tr>
+    <tr>
+      <td>V15</td>
+      <td>0.2663</td>
+      <td>0.3360</td>
+      <td>-0.1959</td>
+    </tr>
+  </tbody>
+</table>
+    <p>KS distance is a distribution difference, not a claim of causal drift. Both periods contain legitimate transactions only.</p>
+    <h2>Every fraud transaction: before and after</h2>
+    <p>Positive distance means above threshold. Source row is the zero-based CSV data-row index.
+    Largest features refer to raw squared residuals in each model's standardized input space.</p>
+    <p><a href="fraud-case-analysis.csv">Download all 148 model/case rows</a> · <a href="group-statistics.json">Group-level score and feature statistics</a>
+    · <a href="alternative-scoring.json">Score comparison details</a></p>
+    <div class="scroll"><table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>model</th>
+      <th>source_row</th>
+      <th>Time</th>
+      <th>Amount</th>
+      <th>anomaly_score</th>
+      <th>predicted_class</th>
+      <th>raw_mean_reconstruction_error</th>
+      <th>threshold</th>
+      <th>distance_from_threshold</th>
+      <th>largest_error_features</th>
+      <th>features_at_residual_cap</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>229712</td>
+      <td>146022.00000</td>
+      <td>1.18000</td>
+      <td>2.23460</td>
+      <td>0</td>
+      <td>7.57710</td>
+      <td>2.57216</td>
+      <td>-0.33755</td>
+      <td>V14: 66.1936; V12: 43.5075; V17: 18.4215</td>
+      <td>13</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>229730</td>
+      <td>146026.00000</td>
+      <td>2.22000</td>
+      <td>0.71576</td>
+      <td>0</td>
+      <td>0.77376</td>
+      <td>2.57216</td>
+      <td>-1.85640</td>
+      <td>V15: 5.6426; V4: 4.0395; V9: 2.3000</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>230076</td>
+      <td>146179.00000</td>
+      <td>0.77000</td>
+      <td>2.30411</td>
+      <td>0</td>
+      <td>7.93600</td>
+      <td>2.57216</td>
+      <td>-0.26804</td>
+      <td>V14: 55.3320; V12: 46.8663; V17: 25.3930</td>
+      <td>12</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>230476</td>
+      <td>146344.00000</td>
+      <td>94.82000</td>
+      <td>2.51494</td>
+      <td>0</td>
+      <td>8.12331</td>
+      <td>2.57216</td>
+      <td>-0.05722</td>
+      <td>V14: 59.4659; V12: 34.9628; V10: 22.8608</td>
+      <td>12</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>231978</td>
+      <td>146998.00000</td>
+      <td>8.00000</td>
+      <td>1.28716</td>
+      <td>0</td>
+      <td>2.41520</td>
+      <td>2.57216</td>
+      <td>-1.28499</td>
+      <td>V14: 22.5715; V21: 14.7562; V17: 7.0620</td>
+      <td>4</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>233258</td>
+      <td>147501.00000</td>
+      <td>996.27000</td>
+      <td>2.38246</td>
+      <td>0</td>
+      <td>5.53127</td>
+      <td>2.57216</td>
+      <td>-0.18970</td>
+      <td>V18: 18.0583; V17: 17.9588; V23: 16.0808</td>
+      <td>12</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>234574</td>
+      <td>148028.00000</td>
+      <td>0.00000</td>
+      <td>2.33523</td>
+      <td>0</td>
+      <td>11.27055</td>
+      <td>2.57216</td>
+      <td>-0.23692</td>
+      <td>V14: 104.7878; V12: 57.5468; V17: 39.6701</td>
+      <td>14</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>234632</td>
+      <td>148053.00000</td>
+      <td>1.59000</td>
+      <td>1.67837</td>
+      <td>0</td>
+      <td>4.10714</td>
+      <td>2.57216</td>
+      <td>-0.89378</td>
+      <td>V14: 40.2479; V12: 16.0248; V17: 13.1976</td>
+      <td>7</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>234705</td>
+      <td>148074.00000</td>
+      <td>0.00000</td>
+      <td>1.74984</td>
+      <td>0</td>
+      <td>4.12544</td>
+      <td>2.57216</td>
+      <td>-0.82232</td>
+      <td>V14: 36.3972; V12: 10.8562; V9: 10.7156</td>
+      <td>9</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>235616</td>
+      <td>148468.00000</td>
+      <td>0.76000</td>
+      <td>2.84825</td>
+      <td>1</td>
+      <td>10.73603</td>
+      <td>2.57216</td>
+      <td>0.27610</td>
+      <td>V17: 53.7724; V12: 33.3732; V18: 32.8671</td>
+      <td>15</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>235634</td>
+      <td>148476.00000</td>
+      <td>0.76000</td>
+      <td>2.56652</td>
+      <td>0</td>
+      <td>11.35963</td>
+      <td>2.57216</td>
+      <td>-0.00564</td>
+      <td>V14: 72.4693; V16: 39.1912; V12: 38.3191</td>
+      <td>14</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>235644</td>
+      <td>148479.00000</td>
+      <td>122.68000</td>
+      <td>2.80532</td>
+      <td>1</td>
+      <td>10.46095</td>
+      <td>2.57216</td>
+      <td>0.23316</td>
+      <td>V14: 71.2815; V10: 34.8032; V12: 33.6645</td>
+      <td>15</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>237107</td>
+      <td>149096.00000</td>
+      <td>0.00000</td>
+      <td>1.57895</td>
+      <td>0</td>
+      <td>4.65944</td>
+      <td>2.57216</td>
+      <td>-0.99320</td>
+      <td>V14: 52.6196; V12: 18.2106; V17: 14.6285</td>
+      <td>6</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>237426</td>
+      <td>149236.00000</td>
+      <td>1.00000</td>
+      <td>1.13840</td>
+      <td>0</td>
+      <td>1.39606</td>
+      <td>2.57216</td>
+      <td>-1.43376</td>
+      <td>V5: 8.1175; V14: 5.7756; V6: 5.5792</td>
+      <td>3</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>238222</td>
+      <td>149582.00000</td>
+      <td>1.10000</td>
+      <td>2.61537</td>
+      <td>1</td>
+      <td>21.21088</td>
+      <td>2.57216</td>
+      <td>0.04321</td>
+      <td>V14: 181.2833; V17: 99.7743; V27: 85.1783</td>
+      <td>16</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>238366</td>
+      <td>149640.00000</td>
+      <td>2.00000</td>
+      <td>2.00852</td>
+      <td>0</td>
+      <td>4.37422</td>
+      <td>2.57216</td>
+      <td>-0.56364</td>
+      <td>V14: 32.5824; V16: 14.4359; V19: 10.4198</td>
+      <td>10</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>238466</td>
+      <td>149676.00000</td>
+      <td>17.39000</td>
+      <td>0.94229</td>
+      <td>0</td>
+      <td>0.96326</td>
+      <td>2.57216</td>
+      <td>-1.62986</td>
+      <td>V4: 4.6080; V19: 3.7327; V10: 3.3613</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>239499</td>
+      <td>150138.00000</td>
+      <td>50.00000</td>
+      <td>1.89388</td>
+      <td>0</td>
+      <td>4.57974</td>
+      <td>2.57216</td>
+      <td>-0.67828</td>
+      <td>V14: 38.2947; V16: 24.3630; V10: 19.1030</td>
+      <td>7</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>239501</td>
+      <td>150139.00000</td>
+      <td>237.26000</td>
+      <td>1.88071</td>
+      <td>0</td>
+      <td>4.09810</td>
+      <td>2.57216</td>
+      <td>-0.69145</td>
+      <td>V18: 22.4127; V17: 19.0076; V3: 14.4109</td>
+      <td>9</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>240222</td>
+      <td>150494.00000</td>
+      <td>1.00000</td>
+      <td>0.88216</td>
+      <td>0</td>
+      <td>0.92316</td>
+      <td>2.57216</td>
+      <td>-1.69000</td>
+      <td>V4: 5.1890; V15: 3.7911; V13: 2.9805</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>241254</td>
+      <td>150949.00000</td>
+      <td>9.29000</td>
+      <td>1.43336</td>
+      <td>0</td>
+      <td>2.35428</td>
+      <td>2.57216</td>
+      <td>-1.13880</td>
+      <td>V14: 21.2171; V16: 10.7157; V7: 5.4232</td>
+      <td>4</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>241445</td>
+      <td>151029.00000</td>
+      <td>10.70000</td>
+      <td>2.60565</td>
+      <td>1</td>
+      <td>10.72871</td>
+      <td>2.57216</td>
+      <td>0.03350</td>
+      <td>V14: 89.6480; V17: 50.6061; V10: 28.0855</td>
+      <td>15</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>243393</td>
+      <td>151916.00000</td>
+      <td>0.01000</td>
+      <td>3.10968</td>
+      <td>1</td>
+      <td>17.27691</td>
+      <td>2.57216</td>
+      <td>0.53753</td>
+      <td>V14: 145.4583; V17: 49.6489; V16: 49.5705</td>
+      <td>19</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>243547</td>
+      <td>151972.00000</td>
+      <td>57.73000</td>
+      <td>2.83074</td>
+      <td>1</td>
+      <td>16.50820</td>
+      <td>2.57216</td>
+      <td>0.25858</td>
+      <td>V14: 135.2535; V27: 63.3227; V17: 54.1370</td>
+      <td>17</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>243699</td>
+      <td>152036.00000</td>
+      <td>1.00000</td>
+      <td>2.51717</td>
+      <td>0</td>
+      <td>23.41672</td>
+      <td>2.57216</td>
+      <td>-0.05499</td>
+      <td>V14: 213.8128; V17: 108.6576; V27: 99.5299</td>
+      <td>14</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>243749</td>
+      <td>152058.00000</td>
+      <td>1.00000</td>
+      <td>2.73509</td>
+      <td>1</td>
+      <td>23.02349</td>
+      <td>2.57216</td>
+      <td>0.16294</td>
+      <td>V14: 199.5762; V17: 106.8603; V27: 86.5868</td>
+      <td>16</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>243848</td>
+      <td>152098.00000</td>
+      <td>1.00000</td>
+      <td>2.73542</td>
+      <td>1</td>
+      <td>22.55570</td>
+      <td>2.57216</td>
+      <td>0.16326</td>
+      <td>V14: 189.6080; V17: 106.9987; V27: 86.6119</td>
+      <td>15</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>244004</td>
+      <td>152165.00000</td>
+      <td>1.00000</td>
+      <td>2.71788</td>
+      <td>1</td>
+      <td>22.11009</td>
+      <td>2.57216</td>
+      <td>0.14572</td>
+      <td>V14: 179.7230; V17: 107.2815; V27: 86.4463</td>
+      <td>15</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>244333</td>
+      <td>152307.00000</td>
+      <td>1.00000</td>
+      <td>2.69828</td>
+      <td>1</td>
+      <td>21.70268</td>
+      <td>2.57216</td>
+      <td>0.12613</td>
+      <td>V14: 170.0238; V17: 107.6169; V27: 86.2277</td>
+      <td>13</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>245347</td>
+      <td>152710.00000</td>
+      <td>2.47000</td>
+      <td>0.75826</td>
+      <td>0</td>
+      <td>0.88640</td>
+      <td>2.57216</td>
+      <td>-1.81390</td>
+      <td>V15: 7.7162; V19: 3.0871; V9: 2.7025</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>245556</td>
+      <td>152802.00000</td>
+      <td>357.95000</td>
+      <td>0.73822</td>
+      <td>0</td>
+      <td>0.84148</td>
+      <td>2.57216</td>
+      <td>-1.83393</td>
+      <td>Amount: 6.6199; V3: 4.3746; V18: 3.7032</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>247673</td>
+      <td>153653.00000</td>
+      <td>247.86000</td>
+      <td>2.59726</td>
+      <td>1</td>
+      <td>7.94857</td>
+      <td>2.57216</td>
+      <td>0.02510</td>
+      <td>V17: 60.7573; V27: 26.1648; V18: 21.2133</td>
+      <td>14</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>247995</td>
+      <td>153761.00000</td>
+      <td>51.37000</td>
+      <td>1.89109</td>
+      <td>0</td>
+      <td>4.41224</td>
+      <td>2.57216</td>
+      <td>-0.68106</td>
+      <td>V14: 48.8012; V10: 12.8456; V12: 12.7016</td>
+      <td>8</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>248296</td>
+      <td>153875.00000</td>
+      <td>0.00000</td>
+      <td>1.73308</td>
+      <td>0</td>
+      <td>4.68432</td>
+      <td>2.57216</td>
+      <td>-0.83908</td>
+      <td>V14: 37.6468; V17: 19.4541; V12: 18.8808</td>
+      <td>7</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>248971</td>
+      <td>154181.00000</td>
+      <td>0.76000</td>
+      <td>1.60806</td>
+      <td>0</td>
+      <td>2.44570</td>
+      <td>2.57216</td>
+      <td>-0.96410</td>
+      <td>V14: 15.9699; V17: 8.6850; V10: 8.4329</td>
+      <td>5</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>249167</td>
+      <td>154278.00000</td>
+      <td>1504.93000</td>
+      <td>2.20059</td>
+      <td>0</td>
+      <td>7.20152</td>
+      <td>2.57216</td>
+      <td>-0.37157</td>
+      <td>V14: 56.2540; V10: 27.4057; V12: 25.9369</td>
+      <td>8</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>249239</td>
+      <td>154309.00000</td>
+      <td>1096.99000</td>
+      <td>0.53906</td>
+      <td>0</td>
+      <td>0.53906</td>
+      <td>2.57216</td>
+      <td>-2.03309</td>
+      <td>V3: 3.4577; V19: 2.3332; V4: 1.9657</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>249607</td>
+      <td>154493.00000</td>
+      <td>35.00000</td>
+      <td>2.34287</td>
+      <td>0</td>
+      <td>7.26026</td>
+      <td>2.57216</td>
+      <td>-0.22929</td>
+      <td>V14: 55.5138; V20: 28.6028; V10: 26.5741</td>
+      <td>11</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>249828</td>
+      <td>154599.00000</td>
+      <td>6.74000</td>
+      <td>2.16387</td>
+      <td>0</td>
+      <td>11.10239</td>
+      <td>2.57216</td>
+      <td>-0.40829</td>
+      <td>V14: 114.5216; V17: 32.5211; V12: 29.5880</td>
+      <td>12</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>249963</td>
+      <td>154657.00000</td>
+      <td>0.77000</td>
+      <td>2.40191</td>
+      <td>0</td>
+      <td>11.13363</td>
+      <td>2.57216</td>
+      <td>-0.17024</td>
+      <td>V14: 94.3147; V11: 36.7248; V17: 35.2483</td>
+      <td>13</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>250761</td>
+      <td>155054.00000</td>
+      <td>0.77000</td>
+      <td>2.49510</td>
+      <td>0</td>
+      <td>10.61059</td>
+      <td>2.57216</td>
+      <td>-0.07705</td>
+      <td>V14: 84.4822; V17: 35.3362; V11: 34.9499</td>
+      <td>13</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>251477</td>
+      <td>155359.00000</td>
+      <td>0.77000</td>
+      <td>2.59161</td>
+      <td>1</td>
+      <td>10.31750</td>
+      <td>2.57216</td>
+      <td>0.01946</td>
+      <td>V14: 76.5506; V17: 34.5011; V11: 33.8723</td>
+      <td>14</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>251866</td>
+      <td>155535.00000</td>
+      <td>3.90000</td>
+      <td>2.11442</td>
+      <td>0</td>
+      <td>9.87416</td>
+      <td>2.57216</td>
+      <td>-0.45774</td>
+      <td>V14: 96.3749; V17: 37.7906; V12: 28.6458</td>
+      <td>13</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>251881</td>
+      <td>155542.00000</td>
+      <td>3.14000</td>
+      <td>0.61301</td>
+      <td>0</td>
+      <td>0.67873</td>
+      <td>2.57216</td>
+      <td>-1.95915</td>
+      <td>V15: 5.5723; V4: 4.3336; V10: 2.3365</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>251891</td>
+      <td>155548.00000</td>
+      <td>7.06000</td>
+      <td>0.58612</td>
+      <td>0</td>
+      <td>0.69051</td>
+      <td>2.57216</td>
+      <td>-1.98604</td>
+      <td>V15: 6.4191; V4: 4.6084; V10: 2.2725</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>251904</td>
+      <td>155554.00000</td>
+      <td>94.82000</td>
+      <td>2.44737</td>
+      <td>0</td>
+      <td>11.35562</td>
+      <td>2.57216</td>
+      <td>-0.12479</td>
+      <td>V14: 102.9773; V10: 45.0059; V12: 30.4681</td>
+      <td>13</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>252124</td>
+      <td>155662.00000</td>
+      <td>0.77000</td>
+      <td>2.48868</td>
+      <td>0</td>
+      <td>10.75285</td>
+      <td>2.57216</td>
+      <td>-0.08348</td>
+      <td>V14: 91.4219; V17: 45.2132; V12: 38.7212</td>
+      <td>14</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>252774</td>
+      <td>155965.00000</td>
+      <td>0.77000</td>
+      <td>2.61966</td>
+      <td>1</td>
+      <td>10.02921</td>
+      <td>2.57216</td>
+      <td>0.04750</td>
+      <td>V14: 74.7551; V12: 35.7033; V17: 35.1950</td>
+      <td>14</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>254344</td>
+      <td>156685.00000</td>
+      <td>187.11000</td>
+      <td>0.60153</td>
+      <td>0</td>
+      <td>0.60153</td>
+      <td>2.57216</td>
+      <td>-1.97062</td>
+      <td>V3: 2.8582; Amount: 2.2743; V26: 2.1418</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>254395</td>
+      <td>156710.00000</td>
+      <td>7.59000</td>
+      <td>0.86699</td>
+      <td>0</td>
+      <td>0.93494</td>
+      <td>2.57216</td>
+      <td>-1.70516</td>
+      <td>V15: 5.1832; V19: 4.7871; V4: 2.7425</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>255403</td>
+      <td>157207.00000</td>
+      <td>4.97000</td>
+      <td>1.76960</td>
+      <td>0</td>
+      <td>4.28507</td>
+      <td>2.57216</td>
+      <td>-0.80255</td>
+      <td>V14: 37.4954; V17: 13.6558; V12: 13.4700</td>
+      <td>9</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>255556</td>
+      <td>157284.00000</td>
+      <td>0.77000</td>
+      <td>1.87958</td>
+      <td>0</td>
+      <td>4.56285</td>
+      <td>2.57216</td>
+      <td>-0.69257</td>
+      <td>V14: 31.2611; V12: 17.5691; V17: 15.5986</td>
+      <td>7</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>258403</td>
+      <td>158638.00000</td>
+      <td>296.00000</td>
+      <td>2.16541</td>
+      <td>0</td>
+      <td>6.30813</td>
+      <td>2.57216</td>
+      <td>-0.40675</td>
+      <td>V14: 37.4108; V3: 24.2609; V20: 18.3017</td>
+      <td>13</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>261056</td>
+      <td>159844.00000</td>
+      <td>45.51000</td>
+      <td>1.62153</td>
+      <td>0</td>
+      <td>2.57914</td>
+      <td>2.57216</td>
+      <td>-0.95063</td>
+      <td>V14: 13.1555; V12: 11.3642; V4: 10.4035</td>
+      <td>6</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>261473</td>
+      <td>160034.00000</td>
+      <td>4.90000</td>
+      <td>1.95564</td>
+      <td>0</td>
+      <td>5.62054</td>
+      <td>2.57216</td>
+      <td>-0.61651</td>
+      <td>V14: 54.5850; V17: 21.6687; V16: 15.6122</td>
+      <td>8</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>261925</td>
+      <td>160243.00000</td>
+      <td>156.00000</td>
+      <td>1.81084</td>
+      <td>0</td>
+      <td>5.39038</td>
+      <td>2.57216</td>
+      <td>-0.76132</td>
+      <td>V14: 57.1674; V27: 24.3798; V17: 14.4362</td>
+      <td>7</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>262560</td>
+      <td>160537.00000</td>
+      <td>4.69000</td>
+      <td>2.38656</td>
+      <td>0</td>
+      <td>13.78089</td>
+      <td>2.57216</td>
+      <td>-0.18560</td>
+      <td>V14: 140.2348; V12: 55.2481; V10: 39.9136</td>
+      <td>13</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>262826</td>
+      <td>160665.00000</td>
+      <td>0.77000</td>
+      <td>2.51743</td>
+      <td>0</td>
+      <td>13.83389</td>
+      <td>2.57216</td>
+      <td>-0.05472</td>
+      <td>V14: 119.2132; V12: 58.5156; V17: 42.2770</td>
+      <td>13</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>263080</td>
+      <td>160791.00000</td>
+      <td>1.00000</td>
+      <td>0.58695</td>
+      <td>0</td>
+      <td>0.58695</td>
+      <td>2.57216</td>
+      <td>-1.98520</td>
+      <td>V22: 3.3887; V3: 2.9589; V4: 1.2858</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>263274</td>
+      <td>160870.00000</td>
+      <td>0.77000</td>
+      <td>2.59136</td>
+      <td>1</td>
+      <td>13.15127</td>
+      <td>2.57216</td>
+      <td>0.01921</td>
+      <td>V14: 107.7269; V12: 54.0050; V17: 41.1033</td>
+      <td>13</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>263324</td>
+      <td>160895.00000</td>
+      <td>127.14000</td>
+      <td>2.81873</td>
+      <td>1</td>
+      <td>12.77704</td>
+      <td>2.57216</td>
+      <td>0.24657</td>
+      <td>V17: 63.8028; V18: 44.4520; V10: 34.9498</td>
+      <td>16</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>263877</td>
+      <td>161154.00000</td>
+      <td>0.38000</td>
+      <td>2.61268</td>
+      <td>1</td>
+      <td>13.12577</td>
+      <td>2.57216</td>
+      <td>0.04052</td>
+      <td>V14: 103.1749; V10: 63.8086; V17: 40.8325</td>
+      <td>15</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>268375</td>
+      <td>163181.00000</td>
+      <td>39.98000</td>
+      <td>2.54036</td>
+      <td>0</td>
+      <td>10.31616</td>
+      <td>2.57216</td>
+      <td>-0.03180</td>
+      <td>V18: 57.4333; V17: 39.6431; V16: 34.5291</td>
+      <td>14</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>272521</td>
+      <td>165132.00000</td>
+      <td>12.31000</td>
+      <td>1.81436</td>
+      <td>0</td>
+      <td>3.84758</td>
+      <td>2.57216</td>
+      <td>-0.75780</td>
+      <td>V14: 33.5075; V19: 13.5255; V10: 12.8468</td>
+      <td>7</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>274382</td>
+      <td>165981.00000</td>
+      <td>0.00000</td>
+      <td>1.44892</td>
+      <td>0</td>
+      <td>2.86477</td>
+      <td>2.57216</td>
+      <td>-1.12324</td>
+      <td>V25: 20.2051; V4: 17.3956; V20: 11.1689</td>
+      <td>7</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>274475</td>
+      <td>166028.00000</td>
+      <td>39.90000</td>
+      <td>1.62340</td>
+      <td>0</td>
+      <td>2.55940</td>
+      <td>2.57216</td>
+      <td>-0.94876</td>
+      <td>V14: 19.2679; V12: 9.6106; V25: 6.7757</td>
+      <td>8</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>275992</td>
+      <td>166831.00000</td>
+      <td>634.30000</td>
+      <td>0.96219</td>
+      <td>0</td>
+      <td>0.97093</td>
+      <td>2.57216</td>
+      <td>-1.60997</td>
+      <td>V7: 4.2535; V5: 3.8080; V10: 3.0274</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>276071</td>
+      <td>166883.00000</td>
+      <td>19.95000</td>
+      <td>0.46507</td>
+      <td>0</td>
+      <td>0.46507</td>
+      <td>2.57216</td>
+      <td>-2.10708</td>
+      <td>V22: 2.1188; V7: 2.0215; V3: 1.4227</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>276864</td>
+      <td>167338.00000</td>
+      <td>349.08000</td>
+      <td>1.79419</td>
+      <td>0</td>
+      <td>4.45695</td>
+      <td>2.57216</td>
+      <td>-0.77797</td>
+      <td>V14: 36.6291; V12: 17.4818; V10: 15.8340</td>
+      <td>8</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>279863</td>
+      <td>169142.00000</td>
+      <td>390.00000</td>
+      <td>2.37174</td>
+      <td>0</td>
+      <td>7.80352</td>
+      <td>2.57216</td>
+      <td>-0.20041</td>
+      <td>V14: 64.0659; V10: 41.9513; V12: 31.2344</td>
+      <td>13</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>280143</td>
+      <td>169347.00000</td>
+      <td>0.76000</td>
+      <td>2.02697</td>
+      <td>0</td>
+      <td>4.06069</td>
+      <td>2.57216</td>
+      <td>-0.54519</td>
+      <td>V14: 33.0101; V10: 14.3296; V12: 10.4596</td>
+      <td>11</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>280149</td>
+      <td>169351.00000</td>
+      <td>77.89000</td>
+      <td>1.74394</td>
+      <td>0</td>
+      <td>4.35415</td>
+      <td>2.57216</td>
+      <td>-0.82821</td>
+      <td>V14: 28.8831; V17: 28.4434; V10: 16.3743</td>
+      <td>7</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>281144</td>
+      <td>169966.00000</td>
+      <td>245.00000</td>
+      <td>2.21749</td>
+      <td>0</td>
+      <td>7.50541</td>
+      <td>2.57216</td>
+      <td>-0.35467</td>
+      <td>V14: 66.2886; V12: 29.8231; V10: 27.3081</td>
+      <td>12</td>
+    </tr>
+    <tr>
+      <td>Before: capped AE, all 29 inputs</td>
+      <td>281674</td>
+      <td>170348.00000</td>
+      <td>42.53000</td>
+      <td>0.43203</td>
+      <td>0</td>
+      <td>0.43203</td>
+      <td>2.57216</td>
+      <td>-2.14013</td>
+      <td>V3: 3.1620; Amount: 2.2311; V6: 1.8575</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>229712</td>
+      <td>146022.00000</td>
+      <td>1.18000</td>
+      <td>7.24109</td>
+      <td>1</td>
+      <td>23.05418</td>
+      <td>4.92275</td>
+      <td>2.31834</td>
+      <td>V17: 57.1975; V14: 51.1904; V12: 37.1676</td>
+      <td>5</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>229730</td>
+      <td>146026.00000</td>
+      <td>2.22000</td>
+      <td>0.88924</td>
+      <td>0</td>
+      <td>0.88924</td>
+      <td>4.92275</td>
+      <td>-4.03351</td>
+      <td>V4: 3.9801; V17: 1.7086; V3: 0.6503</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>230076</td>
+      <td>146179.00000</td>
+      <td>0.77000</td>
+      <td>7.14774</td>
+      <td>1</td>
+      <td>19.97577</td>
+      <td>4.92275</td>
+      <td>2.22499</td>
+      <td>V14: 41.6440; V17: 40.4525; V12: 33.9655</td>
+      <td>5</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>230476</td>
+      <td>146344.00000</td>
+      <td>94.82000</td>
+      <td>6.54929</td>
+      <td>1</td>
+      <td>19.31712</td>
+      <td>4.92275</td>
+      <td>1.62654</td>
+      <td>V17: 38.6167; V14: 33.4550; V12: 31.1750</td>
+      <td>5</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>231978</td>
+      <td>146998.00000</td>
+      <td>8.00000</td>
+      <td>1.39737</td>
+      <td>0</td>
+      <td>1.43414</td>
+      <td>4.92275</td>
+      <td>-3.52538</td>
+      <td>V11: 9.2942; V14: 0.9686; V18: 0.6823</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>233258</td>
+      <td>147501.00000</td>
+      <td>996.27000</td>
+      <td>7.15806</td>
+      <td>1</td>
+      <td>13.85753</td>
+      <td>4.92275</td>
+      <td>2.23530</td>
+      <td>V17: 32.0479; V4: 24.7048; V16: 15.6646</td>
+      <td>5</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>234574</td>
+      <td>148028.00000</td>
+      <td>0.00000</td>
+      <td>6.91392</td>
+      <td>1</td>
+      <td>33.04530</td>
+      <td>4.92275</td>
+      <td>1.99117</td>
+      <td>V14: 95.4436; V17: 81.0848; V12: 56.8622</td>
+      <td>4</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>234632</td>
+      <td>148053.00000</td>
+      <td>1.59000</td>
+      <td>6.20206</td>
+      <td>1</td>
+      <td>12.73241</td>
+      <td>4.92275</td>
+      <td>1.27931</td>
+      <td>V17: 41.3505; V14: 26.0778; V12: 11.8145</td>
+      <td>3</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>234705</td>
+      <td>148074.00000</td>
+      <td>0.00000</td>
+      <td>3.64887</td>
+      <td>0</td>
+      <td>5.58914</td>
+      <td>4.92275</td>
+      <td>-1.27388</td>
+      <td>V17: 24.5222; V4: 8.2093; V12: 5.4371</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>235616</td>
+      <td>148468.00000</td>
+      <td>0.76000</td>
+      <td>8.29932</td>
+      <td>1</td>
+      <td>34.67906</td>
+      <td>4.92275</td>
+      <td>3.37657</td>
+      <td>V17: 111.3656; V16: 40.3719; V12: 36.5854</td>
+      <td>7</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>235634</td>
+      <td>148476.00000</td>
+      <td>0.76000</td>
+      <td>6.79700</td>
+      <td>1</td>
+      <td>30.63593</td>
+      <td>4.92275</td>
+      <td>1.87424</td>
+      <td>V14: 64.0640; V12: 53.1920; V17: 48.4554</td>
+      <td>5</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>235644</td>
+      <td>148479.00000</td>
+      <td>122.68000</td>
+      <td>7.20264</td>
+      <td>1</td>
+      <td>30.68831</td>
+      <td>4.92275</td>
+      <td>2.27989</td>
+      <td>V14: 67.2801; V3: 48.0344; V12: 43.7963</td>
+      <td>5</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>237107</td>
+      <td>149096.00000</td>
+      <td>0.00000</td>
+      <td>5.62231</td>
+      <td>1</td>
+      <td>11.76265</td>
+      <td>4.92275</td>
+      <td>0.69956</td>
+      <td>V17: 48.4623; V14: 18.6604; V12: 7.4091</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>237426</td>
+      <td>149236.00000</td>
+      <td>1.00000</td>
+      <td>0.96828</td>
+      <td>0</td>
+      <td>0.96828</td>
+      <td>4.92275</td>
+      <td>-3.95447</td>
+      <td>V3: 2.8588; V12: 1.4804; V18: 0.9818</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>238222</td>
+      <td>149582.00000</td>
+      <td>1.10000</td>
+      <td>8.99395</td>
+      <td>1</td>
+      <td>63.02611</td>
+      <td>4.92275</td>
+      <td>4.07120</td>
+      <td>V14: 177.0716; V17: 167.1176; V16: 59.7286</td>
+      <td>7</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>238366</td>
+      <td>149640.00000</td>
+      <td>2.00000</td>
+      <td>6.17077</td>
+      <td>1</td>
+      <td>10.27108</td>
+      <td>4.92275</td>
+      <td>1.24802</td>
+      <td>V17: 35.2008; V16: 12.6155; V14: 10.8271</td>
+      <td>4</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>238466</td>
+      <td>149676.00000</td>
+      <td>17.39000</td>
+      <td>1.68579</td>
+      <td>0</td>
+      <td>1.68579</td>
+      <td>4.92275</td>
+      <td>-3.23696</td>
+      <td>V4: 4.2488; V17: 3.9512; V16: 2.5583</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>239499</td>
+      <td>150138.00000</td>
+      <td>50.00000</td>
+      <td>5.72597</td>
+      <td>1</td>
+      <td>10.59023</td>
+      <td>4.92275</td>
+      <td>0.80322</td>
+      <td>V14: 32.6997; V17: 17.8400; V12: 12.2514</td>
+      <td>4</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>239501</td>
+      <td>150139.00000</td>
+      <td>237.26000</td>
+      <td>5.50805</td>
+      <td>1</td>
+      <td>10.07177</td>
+      <td>4.92275</td>
+      <td>0.58530</td>
+      <td>V17: 30.5956; V3: 20.0013; V16: 12.9129</td>
+      <td>3</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>240222</td>
+      <td>150494.00000</td>
+      <td>1.00000</td>
+      <td>1.65953</td>
+      <td>0</td>
+      <td>1.65953</td>
+      <td>4.92275</td>
+      <td>-3.26323</td>
+      <td>V11: 6.0962; V4: 5.4390; V12: 0.6470</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>241254</td>
+      <td>150949.00000</td>
+      <td>9.29000</td>
+      <td>3.52909</td>
+      <td>0</td>
+      <td>4.40541</td>
+      <td>4.92275</td>
+      <td>-1.39366</td>
+      <td>V17: 16.0105; V14: 8.6527; V12: 3.8155</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>241445</td>
+      <td>151029.00000</td>
+      <td>10.70000</td>
+      <td>7.59118</td>
+      <td>1</td>
+      <td>29.85776</td>
+      <td>4.92275</td>
+      <td>2.66842</td>
+      <td>V14: 80.9800; V17: 72.3165; V3: 23.2176</td>
+      <td>6</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>243393</td>
+      <td>151916.00000</td>
+      <td>0.01000</td>
+      <td>7.86266</td>
+      <td>1</td>
+      <td>38.90017</td>
+      <td>4.92275</td>
+      <td>2.93991</td>
+      <td>V14: 100.8019; V17: 81.0533; V12: 50.2372</td>
+      <td>5</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>243547</td>
+      <td>151972.00000</td>
+      <td>57.73000</td>
+      <td>8.27885</td>
+      <td>1</td>
+      <td>38.26428</td>
+      <td>4.92275</td>
+      <td>3.35610</td>
+      <td>V14: 106.0381; V17: 76.5892; V3: 34.8257</td>
+      <td>7</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>243699</td>
+      <td>152036.00000</td>
+      <td>1.00000</td>
+      <td>8.81218</td>
+      <td>1</td>
+      <td>61.73569</td>
+      <td>4.92275</td>
+      <td>3.88943</td>
+      <td>V14: 184.6240; V17: 148.4419; V12: 90.0313</td>
+      <td>7</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>243749</td>
+      <td>152058.00000</td>
+      <td>1.00000</td>
+      <td>8.88031</td>
+      <td>1</td>
+      <td>59.06794</td>
+      <td>4.92275</td>
+      <td>3.95756</td>
+      <td>V14: 152.6241; V17: 143.6059; V12: 78.7402</td>
+      <td>6</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>243848</td>
+      <td>152098.00000</td>
+      <td>1.00000</td>
+      <td>8.80536</td>
+      <td>1</td>
+      <td>57.18983</td>
+      <td>4.92275</td>
+      <td>3.88261</td>
+      <td>V17: 141.6015; V14: 141.5849; V12: 74.7335</td>
+      <td>6</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>244004</td>
+      <td>152165.00000</td>
+      <td>1.00000</td>
+      <td>8.71366</td>
+      <td>1</td>
+      <td>55.31804</td>
+      <td>4.92275</td>
+      <td>3.79090</td>
+      <td>V17: 140.8916; V14: 129.3075; V12: 70.4371</td>
+      <td>7</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>244333</td>
+      <td>152307.00000</td>
+      <td>1.00000</td>
+      <td>8.60850</td>
+      <td>1</td>
+      <td>53.57302</td>
+      <td>4.92275</td>
+      <td>3.68575</td>
+      <td>V17: 139.8939; V14: 117.9336; V12: 66.3522</td>
+      <td>7</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>245347</td>
+      <td>152710.00000</td>
+      <td>2.47000</td>
+      <td>0.65342</td>
+      <td>0</td>
+      <td>0.65342</td>
+      <td>4.92275</td>
+      <td>-4.26933</td>
+      <td>V4: 3.4072; V17: 0.9468; V16: 0.3948</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>245556</td>
+      <td>152802.00000</td>
+      <td>357.95000</td>
+      <td>0.36201</td>
+      <td>0</td>
+      <td>0.36201</td>
+      <td>4.92275</td>
+      <td>-4.56074</td>
+      <td>V11: 1.8592; V16: 0.2824; V12: 0.2407</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>247673</td>
+      <td>153653.00000</td>
+      <td>247.86000</td>
+      <td>6.62667</td>
+      <td>1</td>
+      <td>14.67092</td>
+      <td>4.92275</td>
+      <td>1.70392</td>
+      <td>V17: 54.9057; V3: 18.0303; V12: 14.6073</td>
+      <td>4</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>247995</td>
+      <td>153761.00000</td>
+      <td>51.37000</td>
+      <td>5.85933</td>
+      <td>1</td>
+      <td>11.20919</td>
+      <td>4.92275</td>
+      <td>0.93657</td>
+      <td>V17: 39.3871; V14: 20.6987; V12: 9.7131</td>
+      <td>3</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>248296</td>
+      <td>153875.00000</td>
+      <td>0.00000</td>
+      <td>5.58263</td>
+      <td>1</td>
+      <td>10.22850</td>
+      <td>4.92275</td>
+      <td>0.65987</td>
+      <td>V17: 38.2541; V14: 16.1168; V12: 9.7960</td>
+      <td>3</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>248971</td>
+      <td>154181.00000</td>
+      <td>0.76000</td>
+      <td>4.33603</td>
+      <td>0</td>
+      <td>5.45790</td>
+      <td>4.92275</td>
+      <td>-0.58673</td>
+      <td>V17: 13.5401; V14: 13.4350; V3: 7.4942</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>249167</td>
+      <td>154278.00000</td>
+      <td>1504.93000</td>
+      <td>6.25077</td>
+      <td>1</td>
+      <td>11.35114</td>
+      <td>4.92275</td>
+      <td>1.32802</td>
+      <td>V17: 35.9011; V3: 16.4033; V12: 12.5274</td>
+      <td>4</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>249239</td>
+      <td>154309.00000</td>
+      <td>1096.99000</td>
+      <td>0.50084</td>
+      <td>0</td>
+      <td>0.50084</td>
+      <td>4.92275</td>
+      <td>-4.42192</td>
+      <td>V16: 3.0571; V3: 0.7689; V4: 0.1119</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>249607</td>
+      <td>154493.00000</td>
+      <td>35.00000</td>
+      <td>5.74990</td>
+      <td>1</td>
+      <td>9.15992</td>
+      <td>4.92275</td>
+      <td>0.82715</td>
+      <td>V17: 33.2747; V14: 11.0358; V12: 9.9696</td>
+      <td>3</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>249828</td>
+      <td>154599.00000</td>
+      <td>6.74000</td>
+      <td>8.46345</td>
+      <td>1</td>
+      <td>33.01184</td>
+      <td>4.92275</td>
+      <td>3.54070</td>
+      <td>V17: 109.8057; V14: 76.9124; V12: 26.0269</td>
+      <td>6</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>249963</td>
+      <td>154657.00000</td>
+      <td>0.77000</td>
+      <td>8.06524</td>
+      <td>1</td>
+      <td>28.63683</td>
+      <td>4.92275</td>
+      <td>3.14248</td>
+      <td>V17: 83.9784; V14: 60.1496; V12: 25.0299</td>
+      <td>6</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>250761</td>
+      <td>155054.00000</td>
+      <td>0.77000</td>
+      <td>8.32811</td>
+      <td>1</td>
+      <td>28.07422</td>
+      <td>4.92275</td>
+      <td>3.40536</td>
+      <td>V17: 91.4788; V14: 48.6206; V16: 20.7169</td>
+      <td>7</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>251477</td>
+      <td>155359.00000</td>
+      <td>0.77000</td>
+      <td>8.35522</td>
+      <td>1</td>
+      <td>26.97129</td>
+      <td>4.92275</td>
+      <td>3.43247</td>
+      <td>V17: 91.3762; V14: 41.5842; V16: 20.5694</td>
+      <td>7</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>251866</td>
+      <td>155535.00000</td>
+      <td>3.90000</td>
+      <td>8.22869</td>
+      <td>1</td>
+      <td>34.65477</td>
+      <td>4.92275</td>
+      <td>3.30594</td>
+      <td>V14: 98.4416; V17: 77.2290; V12: 40.6256</td>
+      <td>7</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>251881</td>
+      <td>155542.00000</td>
+      <td>3.14000</td>
+      <td>0.88552</td>
+      <td>0</td>
+      <td>0.88552</td>
+      <td>4.92275</td>
+      <td>-4.03723</td>
+      <td>V4: 4.9643; V17: 0.9318; V16: 0.7073</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>251891</td>
+      <td>155548.00000</td>
+      <td>7.06000</td>
+      <td>0.75877</td>
+      <td>0</td>
+      <td>0.75877</td>
+      <td>4.92275</td>
+      <td>-4.16398</td>
+      <td>V4: 5.0832; V17: 0.6322; V16: 0.2038</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>251904</td>
+      <td>155554.00000</td>
+      <td>94.82000</td>
+      <td>7.00983</td>
+      <td>1</td>
+      <td>28.76638</td>
+      <td>4.92275</td>
+      <td>2.08708</td>
+      <td>V14: 71.8793; V17: 62.9785; V12: 37.1703</td>
+      <td>5</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>252124</td>
+      <td>155662.00000</td>
+      <td>0.77000</td>
+      <td>7.74633</td>
+      <td>1</td>
+      <td>28.91656</td>
+      <td>4.92275</td>
+      <td>2.82357</td>
+      <td>V17: 82.7176; V14: 76.2233; V12: 32.6775</td>
+      <td>4</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>252774</td>
+      <td>155965.00000</td>
+      <td>0.77000</td>
+      <td>7.90780</td>
+      <td>1</td>
+      <td>26.97615</td>
+      <td>4.92275</td>
+      <td>2.98505</td>
+      <td>V17: 75.5131; V14: 50.3339; V12: 26.2986</td>
+      <td>6</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>254344</td>
+      <td>156685.00000</td>
+      <td>187.11000</td>
+      <td>1.15593</td>
+      <td>0</td>
+      <td>1.15593</td>
+      <td>4.92275</td>
+      <td>-3.76682</td>
+      <td>V11: 3.8099; V14: 2.9505; V3: 0.9360</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>254395</td>
+      <td>156710.00000</td>
+      <td>7.59000</td>
+      <td>1.02349</td>
+      <td>0</td>
+      <td>1.02349</td>
+      <td>4.92275</td>
+      <td>-3.89926</td>
+      <td>V4: 5.5917; V11: 0.7599; V12: 0.6659</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>255403</td>
+      <td>157207.00000</td>
+      <td>4.97000</td>
+      <td>6.02060</td>
+      <td>1</td>
+      <td>11.96802</td>
+      <td>4.92275</td>
+      <td>1.09785</td>
+      <td>V17: 42.9149; V14: 21.9375; V12: 9.7270</td>
+      <td>3</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>255556</td>
+      <td>157284.00000</td>
+      <td>0.77000</td>
+      <td>6.19646</td>
+      <td>1</td>
+      <td>10.05189</td>
+      <td>4.92275</td>
+      <td>1.27371</td>
+      <td>V17: 32.4429; V14: 13.7354; V4: 11.1402</td>
+      <td>4</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>258403</td>
+      <td>158638.00000</td>
+      <td>296.00000</td>
+      <td>6.67052</td>
+      <td>1</td>
+      <td>11.63448</td>
+      <td>4.92275</td>
+      <td>1.74777</td>
+      <td>V17: 33.4495; V3: 20.4288; V14: 12.4377</td>
+      <td>4</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>261056</td>
+      <td>159844.00000</td>
+      <td>45.51000</td>
+      <td>5.21885</td>
+      <td>1</td>
+      <td>6.10145</td>
+      <td>4.92275</td>
+      <td>0.29610</td>
+      <td>V17: 12.7790; V12: 10.6012; V14: 10.0741</td>
+      <td>4</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>261473</td>
+      <td>160034.00000</td>
+      <td>4.90000</td>
+      <td>6.45090</td>
+      <td>1</td>
+      <td>14.65720</td>
+      <td>4.92275</td>
+      <td>1.52815</td>
+      <td>V14: 50.7255; V17: 28.4190; V12: 12.8958</td>
+      <td>4</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>261925</td>
+      <td>160243.00000</td>
+      <td>156.00000</td>
+      <td>5.35532</td>
+      <td>1</td>
+      <td>13.42309</td>
+      <td>4.92275</td>
+      <td>0.43257</td>
+      <td>V14: 48.1148; V17: 27.3210; V12: 16.1064</td>
+      <td>3</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>262560</td>
+      <td>160537.00000</td>
+      <td>4.69000</td>
+      <td>8.49029</td>
+      <td>1</td>
+      <td>42.85652</td>
+      <td>4.92275</td>
+      <td>3.56754</td>
+      <td>V17: 118.7862; V14: 103.2747; V12: 53.4387</td>
+      <td>7</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>262826</td>
+      <td>160665.00000</td>
+      <td>0.77000</td>
+      <td>8.21545</td>
+      <td>1</td>
+      <td>38.19781</td>
+      <td>4.92275</td>
+      <td>3.29269</td>
+      <td>V14: 91.3159; V17: 90.6861; V12: 49.8226</td>
+      <td>6</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>263080</td>
+      <td>160791.00000</td>
+      <td>1.00000</td>
+      <td>0.90747</td>
+      <td>0</td>
+      <td>0.90747</td>
+      <td>4.92275</td>
+      <td>-4.01528</td>
+      <td>V16: 2.3637; V3: 2.0724; V11: 2.0072</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>263274</td>
+      <td>160870.00000</td>
+      <td>0.77000</td>
+      <td>8.23851</td>
+      <td>1</td>
+      <td>36.98504</td>
+      <td>4.92275</td>
+      <td>3.31576</td>
+      <td>V17: 92.7451; V14: 80.9891; V12: 45.1654</td>
+      <td>6</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>263324</td>
+      <td>160895.00000</td>
+      <td>127.14000</td>
+      <td>8.53323</td>
+      <td>1</td>
+      <td>38.31100</td>
+      <td>4.92275</td>
+      <td>3.61048</td>
+      <td>V17: 126.3324; V16: 58.4590; V3: 37.6138</td>
+      <td>6</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>263877</td>
+      <td>161154.00000</td>
+      <td>0.38000</td>
+      <td>7.40036</td>
+      <td>1</td>
+      <td>35.52652</td>
+      <td>4.92275</td>
+      <td>2.47761</td>
+      <td>V14: 103.2670; V17: 53.3367; V12: 44.4488</td>
+      <td>5</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>268375</td>
+      <td>163181.00000</td>
+      <td>39.98000</td>
+      <td>7.31879</td>
+      <td>1</td>
+      <td>30.03133</td>
+      <td>4.92275</td>
+      <td>2.39604</td>
+      <td>V17: 93.1158; V16: 35.5687; V3: 35.0520</td>
+      <td>6</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>272521</td>
+      <td>165132.00000</td>
+      <td>12.31000</td>
+      <td>0.40947</td>
+      <td>0</td>
+      <td>0.40947</td>
+      <td>4.92275</td>
+      <td>-4.51328</td>
+      <td>V12: 1.0958; V14: 0.8003; V4: 0.5856</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>274382</td>
+      <td>165981.00000</td>
+      <td>0.00000</td>
+      <td>2.14577</td>
+      <td>0</td>
+      <td>3.41954</td>
+      <td>4.92275</td>
+      <td>-2.77698</td>
+      <td>V4: 19.1901; V11: 4.6792; V14: 1.4570</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>274475</td>
+      <td>166028.00000</td>
+      <td>39.90000</td>
+      <td>4.94757</td>
+      <td>1</td>
+      <td>6.09899</td>
+      <td>4.92275</td>
+      <td>0.02482</td>
+      <td>V14: 13.9122; V3: 11.2178; V12: 10.6972</td>
+      <td>4</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>275992</td>
+      <td>166831.00000</td>
+      <td>634.30000</td>
+      <td>0.56333</td>
+      <td>0</td>
+      <td>0.56333</td>
+      <td>4.92275</td>
+      <td>-4.35942</td>
+      <td>V12: 1.3583; V16: 1.0440; V3: 0.8491</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>276071</td>
+      <td>166883.00000</td>
+      <td>19.95000</td>
+      <td>1.47447</td>
+      <td>0</td>
+      <td>1.47447</td>
+      <td>4.92275</td>
+      <td>-3.44828</td>
+      <td>V14: 3.6067; V16: 2.6873; V17: 2.4313</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>276864</td>
+      <td>167338.00000</td>
+      <td>349.08000</td>
+      <td>5.43547</td>
+      <td>1</td>
+      <td>10.99864</td>
+      <td>4.92275</td>
+      <td>0.51272</td>
+      <td>V14: 26.2753; V12: 21.7981; V3: 16.9886</td>
+      <td>4</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>279863</td>
+      <td>169142.00000</td>
+      <td>390.00000</td>
+      <td>6.74143</td>
+      <td>1</td>
+      <td>21.01623</td>
+      <td>4.92275</td>
+      <td>1.81868</td>
+      <td>V14: 62.1870; V12: 33.1629; V17: 30.7066</td>
+      <td>5</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>280143</td>
+      <td>169347.00000</td>
+      <td>0.76000</td>
+      <td>6.00782</td>
+      <td>1</td>
+      <td>12.01189</td>
+      <td>4.92275</td>
+      <td>1.08507</td>
+      <td>V17: 28.5048; V14: 24.5924; V3: 18.0529</td>
+      <td>4</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>280149</td>
+      <td>169351.00000</td>
+      <td>77.89000</td>
+      <td>5.33960</td>
+      <td>1</td>
+      <td>10.36735</td>
+      <td>4.92275</td>
+      <td>0.41685</td>
+      <td>V17: 37.0363; V14: 21.1857; V3: 6.3587</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>281144</td>
+      <td>169966.00000</td>
+      <td>245.00000</td>
+      <td>6.71218</td>
+      <td>1</td>
+      <td>20.65757</td>
+      <td>4.92275</td>
+      <td>1.78943</td>
+      <td>V14: 59.7179; V12: 29.9391; V17: 29.2354</td>
+      <td>5</td>
+    </tr>
+    <tr>
+      <td>Improved: label-informed AE</td>
+      <td>281674</td>
+      <td>170348.00000</td>
+      <td>42.53000</td>
+      <td>0.29585</td>
+      <td>0</td>
+      <td>0.29585</td>
+      <td>4.92275</td>
+      <td>-4.62690</td>
+      <td>V17: 0.5455; V14: 0.4686; V11: 0.4357</td>
+      <td>0</td>
+    </tr>
+  </tbody>
+</table></div>
+    <p><small>Source: OpenML 1597 · chronological test Time 145234–172792 seconds · reused test, exploratory. Repeated model development makes reused-test results optimistic; no independent holdout exists in this project.</small></p></html>

@@ -1,0 +1,380 @@
+{
+  "scope": "Development only; no final-test scoring or deployment",
+  "control": {
+    "model": "autoencoder",
+    "latent_dim": 2,
+    "activation": "relu",
+    "feature_indices": [
+      13,
+      16,
+      11,
+      15,
+      10,
+      17,
+      3,
+      2
+    ],
+    "input_features": [
+      "V14",
+      "V17",
+      "V12",
+      "V16",
+      "V11",
+      "V18",
+      "V4",
+      "V3"
+    ],
+    "score_clip": 9,
+    "calibration_budget": 0.0005,
+    "calibration": {
+      "threshold": 4.922752380371094,
+      "average_precision": 0.3478675394002438,
+      "roc_auc": 0.8952454023799445,
+      "recall": 0.625,
+      "precision": 0.5172413793103449,
+      "false_positive_rate": 0.0004938620008466206,
+      "alert_rate": 0.0010221344988016355,
+      "alerts": 29,
+      "false_alerts_per_10000": 4.934442408007895,
+      "true_positives": 15,
+      "false_positives": 14,
+      "false_negatives": 9,
+      "true_negatives": 28334
+    },
+    "selection": {
+      "threshold": 4.922752380371094,
+      "average_precision": 0.528551537135267,
+      "roc_auc": 0.9328543016616411,
+      "recall": 0.7878787878787878,
+      "precision": 0.5,
+      "false_positive_rate": 0.0009174311926605505,
+      "alert_rate": 0.001832728298029817,
+      "alerts": 52,
+      "false_alerts_per_10000": 9.163641490149086,
+      "true_positives": 26,
+      "false_positives": 26,
+      "false_negatives": 7,
+      "true_negatives": 28314
+    }
+  },
+  "ablations": [
+    {
+      "name": "L2 regularization",
+      "settings": {
+        "weight_decay": 0.0001
+      },
+      "normal_training_rows": 135928,
+      "epochs_run": 20,
+      "threshold_options": [
+        {
+          "calibration_budget": 0.00025,
+          "selection": {
+            "threshold": 6.403468132019043,
+            "average_precision": 0.6460835831462696,
+            "roc_auc": 0.9304302730908236,
+            "recall": 0.6666666666666666,
+            "precision": 0.6875,
+            "f1": 0.676923076923077,
+            "false_positive_rate": 0.00035285815102328866,
+            "alert_rate": 0.0011278327987875798,
+            "alerts": 32,
+            "false_alerts_per_10000": 3.524477496211187,
+            "true_positives": 22,
+            "false_positives": 10,
+            "false_negatives": 11,
+            "true_negatives": 28330
+          }
+        },
+        {
+          "calibration_budget": 0.0005,
+          "selection": {
+            "threshold": 4.791714668273926,
+            "average_precision": 0.6460835831462696,
+            "roc_auc": 0.9304302730908236,
+            "recall": 0.7878787878787878,
+            "precision": 0.49056603773584906,
+            "f1": 0.6046511627906976,
+            "false_positive_rate": 0.0009527170077628794,
+            "alert_rate": 0.001867973072991929,
+            "alerts": 53,
+            "false_alerts_per_10000": 9.516089239770205,
+            "true_positives": 26,
+            "false_positives": 27,
+            "false_negatives": 7,
+            "true_negatives": 28313
+          }
+        },
+        {
+          "calibration_budget": 0.00075,
+          "selection": {
+            "threshold": 4.401343822479248,
+            "average_precision": 0.6460835831462696,
+            "roc_auc": 0.9304302730908236,
+            "recall": 0.7878787878787878,
+            "precision": 0.4406779661016949,
+            "f1": 0.5652173913043478,
+            "false_positive_rate": 0.0011644318983768526,
+            "alert_rate": 0.0020794417227646004,
+            "alerts": 59,
+            "false_alerts_per_10000": 11.630775737496917,
+            "true_positives": 26,
+            "false_positives": 33,
+            "false_negatives": 7,
+            "true_negatives": 28307
+          }
+        },
+        {
+          "calibration_budget": 0.001,
+          "selection": {
+            "threshold": 4.26658296585083,
+            "average_precision": 0.6460835831462696,
+            "roc_auc": 0.9304302730908236,
+            "recall": 0.7878787878787878,
+            "precision": 0.43333333333333335,
+            "f1": 0.5591397849462365,
+            "false_positive_rate": 0.0011997177134791814,
+            "alert_rate": 0.002114686497726712,
+            "alerts": 60,
+            "false_alerts_per_10000": 11.983223487118035,
+            "true_positives": 26,
+            "false_positives": 34,
+            "false_negatives": 7,
+            "true_negatives": 28306
+          }
+        }
+      ],
+      "chosen": {
+        "calibration_budget": 0.0005,
+        "selection": {
+          "threshold": 4.791714668273926,
+          "average_precision": 0.6460835831462696,
+          "roc_auc": 0.9304302730908236,
+          "recall": 0.7878787878787878,
+          "precision": 0.49056603773584906,
+          "f1": 0.6046511627906976,
+          "false_positive_rate": 0.0009527170077628794,
+          "alert_rate": 0.001867973072991929,
+          "alerts": 53,
+          "false_alerts_per_10000": 9.516089239770205,
+          "true_positives": 26,
+          "false_positives": 27,
+          "false_negatives": 7,
+          "true_negatives": 28313
+        }
+      }
+    },
+    {
+      "name": "Denoising dropout plus L2",
+      "settings": {
+        "weight_decay": 0.0001,
+        "input_dropout": 0.1
+      },
+      "normal_training_rows": 135928,
+      "epochs_run": 60,
+      "threshold_options": [
+        {
+          "calibration_budget": 0.00025,
+          "selection": {
+            "threshold": 6.272266387939453,
+            "average_precision": 0.060221628575930254,
+            "roc_auc": 0.927165800560296,
+            "recall": 0.0,
+            "precision": 0.0,
+            "f1": 0.0,
+            "false_positive_rate": 0.000529287226534933,
+            "alert_rate": 0.000528671624431678,
+            "alerts": 15,
+            "false_alerts_per_10000": 5.28671624431678,
+            "true_positives": 0,
+            "false_positives": 15,
+            "false_negatives": 33,
+            "true_negatives": 28325
+          }
+        },
+        {
+          "calibration_budget": 0.0005,
+          "selection": {
+            "threshold": 5.185500144958496,
+            "average_precision": 0.060221628575930254,
+            "roc_auc": 0.927165800560296,
+            "recall": 0.09090909090909091,
+            "precision": 0.10714285714285714,
+            "f1": 0.09836065573770492,
+            "false_positive_rate": 0.0008821453775582216,
+            "alert_rate": 0.0009868536989391323,
+            "alerts": 28,
+            "false_alerts_per_10000": 8.811193740527967,
+            "true_positives": 3,
+            "false_positives": 25,
+            "false_negatives": 30,
+            "true_negatives": 28315
+          }
+        },
+        {
+          "calibration_budget": 0.00075,
+          "selection": {
+            "threshold": 4.369014263153076,
+            "average_precision": 0.060221628575930254,
+            "roc_auc": 0.927165800560296,
+            "recall": 0.12121212121212122,
+            "precision": 0.1,
+            "f1": 0.1095890410958904,
+            "false_positive_rate": 0.0012702893436838392,
+            "alert_rate": 0.0014097909984844747,
+            "alerts": 40,
+            "false_alerts_per_10000": 12.688118986360273,
+            "true_positives": 4,
+            "false_positives": 36,
+            "false_negatives": 29,
+            "true_negatives": 28304
+          }
+        },
+        {
+          "calibration_budget": 0.001,
+          "selection": {
+            "threshold": 4.004858016967773,
+            "average_precision": 0.060221628575930254,
+            "roc_auc": 0.927165800560296,
+            "recall": 0.12121212121212122,
+            "precision": 0.08163265306122448,
+            "f1": 0.0975609756097561,
+            "false_positive_rate": 0.001587861679604799,
+            "alert_rate": 0.0017269939731434814,
+            "alerts": 49,
+            "false_alerts_per_10000": 15.860148732950341,
+            "true_positives": 4,
+            "false_positives": 45,
+            "false_negatives": 29,
+            "true_negatives": 28295
+          }
+        }
+      ],
+      "chosen": {
+        "calibration_budget": 0.0005,
+        "selection": {
+          "threshold": 5.185500144958496,
+          "average_precision": 0.060221628575930254,
+          "roc_auc": 0.927165800560296,
+          "recall": 0.09090909090909091,
+          "precision": 0.10714285714285714,
+          "f1": 0.09836065573770492,
+          "false_positive_rate": 0.0008821453775582216,
+          "alert_rate": 0.0009868536989391323,
+          "alerts": 28,
+          "false_alerts_per_10000": 8.811193740527967,
+          "true_positives": 3,
+          "false_positives": 25,
+          "false_negatives": 30,
+          "true_negatives": 28315
+        }
+      }
+    },
+    {
+      "name": "25% normal subset; lower LR; smaller batch; longer patience",
+      "settings": {
+        "learning_rate": 0.0003,
+        "batch_size": 256,
+        "patience": 10
+      },
+      "normal_training_rows": 33982,
+      "epochs_run": 60,
+      "threshold_options": [
+        {
+          "calibration_budget": 0.00025,
+          "selection": {
+            "threshold": 6.684689998626709,
+            "average_precision": 0.6411583213038259,
+            "roc_auc": 0.9328457475246466,
+            "recall": 0.45454545454545453,
+            "precision": 0.7894736842105263,
+            "f1": 0.5769230769230769,
+            "false_positive_rate": 0.00014114326040931546,
+            "alert_rate": 0.0006696507242801255,
+            "alerts": 19,
+            "false_alerts_per_10000": 1.4097909984844748,
+            "true_positives": 15,
+            "false_positives": 4,
+            "false_negatives": 18,
+            "true_negatives": 28336
+          }
+        },
+        {
+          "calibration_budget": 0.0005,
+          "selection": {
+            "threshold": 6.089123725891113,
+            "average_precision": 0.6411583213038259,
+            "roc_auc": 0.9328457475246466,
+            "recall": 0.6060606060606061,
+            "precision": 0.7142857142857143,
+            "f1": 0.6557377049180327,
+            "false_positive_rate": 0.0002822865208186309,
+            "alert_rate": 0.0009868536989391323,
+            "alerts": 28,
+            "false_alerts_per_10000": 2.8195819969689495,
+            "true_positives": 20,
+            "false_positives": 8,
+            "false_negatives": 13,
+            "true_negatives": 28332
+          }
+        },
+        {
+          "calibration_budget": 0.00075,
+          "selection": {
+            "threshold": 5.641578674316406,
+            "average_precision": 0.6411583213038259,
+            "roc_auc": 0.9328457475246466,
+            "recall": 0.7272727272727273,
+            "precision": 0.6857142857142857,
+            "f1": 0.7058823529411765,
+            "false_positive_rate": 0.0003881439661256175,
+            "alert_rate": 0.0012335671236739154,
+            "alerts": 35,
+            "false_alerts_per_10000": 3.8769252458323056,
+            "true_positives": 24,
+            "false_positives": 11,
+            "false_negatives": 9,
+            "true_negatives": 28329
+          }
+        },
+        {
+          "calibration_budget": 0.001,
+          "selection": {
+            "threshold": 4.979917526245117,
+            "average_precision": 0.6411583213038259,
+            "roc_auc": 0.9328457475246466,
+            "recall": 0.7878787878787878,
+            "precision": 0.5909090909090909,
+            "f1": 0.6753246753246753,
+            "false_positive_rate": 0.0006351446718419196,
+            "alert_rate": 0.0015507700983329222,
+            "alerts": 44,
+            "false_alerts_per_10000": 6.344059493180136,
+            "true_positives": 26,
+            "false_positives": 18,
+            "false_negatives": 7,
+            "true_negatives": 28322
+          }
+        }
+      ],
+      "chosen": {
+        "calibration_budget": 0.001,
+        "selection": {
+          "threshold": 4.979917526245117,
+          "average_precision": 0.6411583213038259,
+          "roc_auc": 0.9328457475246466,
+          "recall": 0.7878787878787878,
+          "precision": 0.5909090909090909,
+          "f1": 0.6753246753246753,
+          "false_positive_rate": 0.0006351446718419196,
+          "alert_rate": 0.0015507700983329222,
+          "alerts": 44,
+          "false_alerts_per_10000": 6.344059493180136,
+          "true_positives": 26,
+          "false_positives": 18,
+          "false_negatives": 7,
+          "true_negatives": 28322
+        }
+      }
+    }
+  ]
+}

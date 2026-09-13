@@ -1,5 +1,6 @@
 from argparse import Namespace
 import pickle
+import json
 
 import numpy as np
 import pandas as pd
@@ -7,7 +8,7 @@ import pytest
 import torch
 from sklearn.ensemble import IsolationForest
 
-from transaction_anomaly.cli import run, score
+from transaction_anomaly.cli import run, score, evaluate_holdout
 from transaction_anomaly.core import (FEATURES, evaluate, feature_matrix, prepare,
                                        select_threshold, split_data, validate_data,
                                        train_autoencoder, reconstruction_scores)
@@ -101,22 +102,34 @@ def test_end_to_end_and_saved_inference(transactions, tmp_path):
     for name in ("autoencoder", "isolation_forest"):
         np.testing.assert_allclose(loaded_scores[f"{name}_score"], trained_scores[f"{name}_score"], rtol=1e-6)
         np.testing.assert_array_equal(loaded_scores[f"{name}_alert"], trained_scores[f"{name}_alert"])
+    test.to_csv(tmp_path / "labeled.csv", index=False)
+    evaluate_holdout(Namespace(data=tmp_path / "labeled.csv", model_dir=output,
+                               output=tmp_path / "holdout.json"))
+    holdout = json.loads((tmp_path / "holdout.json").read_text())
+    original = json.loads((output / "metrics.json").read_text())
+    assert holdout["thresholds_refitted"] is False
+    for name in ("autoencoder", "isolation_forest"):
+        assert holdout["models"][name]["threshold"] == original["models"][name]["test"]["threshold"]
+        assert holdout["models"][name]["true_positives"] == original["models"][name]["test"]["true_positives"]
 
 
-def test_robust_artifact_inference_with_different_scalers(transactions, tmp_path):
+@pytest.mark.parametrize("indices,activation", [(list(range(29)), "relu"), ([13,16,11,15], "tanh")])
+def test_robust_artifact_inference_with_different_scalers(transactions, tmp_path, indices, activation):
     train, val, test = split_data(transactions)
     scaler, (x_train, x_val, x_test) = prepare(train, val, test, "quantile")
     forest_scaler, (f_train, _, f_test) = prepare(train, val, test)
-    model, _ = train_autoencoder(x_train, x_val, epochs=1, latent_dim=2)
+    model, _ = train_autoencoder(x_train[:, indices], x_val[:, indices], epochs=1,
+                                latent_dim=2, activation=activation)
     forest = IsolationForest(n_estimators=10, random_state=42).fit(f_train)
     torch.save(model.state_dict(), tmp_path / "autoencoder.pt")
     with (tmp_path / "preprocessing_and_baseline.pkl").open("wb") as f:
         pickle.dump({"scaler": scaler, "forest_scaler": forest_scaler, "forest": forest,
                      "latent_dim": 2, "score_clip": 1, "features": FEATURES,
+                     "activation": activation, "feature_indices": indices,
                      "thresholds": {"autoencoder": 0.5, "isolation_forest": 0.5}}, f)
     test[FEATURES].to_csv(tmp_path / "input.csv", index=False)
     score(Namespace(data=tmp_path / "input.csv", model_dir=tmp_path, output=tmp_path / "scores.csv"))
     result = pd.read_csv(tmp_path / "scores.csv")
     np.testing.assert_allclose(result.autoencoder_score,
-                               reconstruction_scores(model, x_test, score_clip=1), rtol=1e-6)
+                               reconstruction_scores(model, x_test[:, indices], score_clip=1), rtol=1e-6)
     np.testing.assert_allclose(result.isolation_forest_score, -forest.score_samples(f_test), rtol=1e-6)

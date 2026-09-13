@@ -99,11 +99,11 @@ def run(args):
     print("Target observed on this split:", report["comparison"]["target_observed_on_this_split"])
 
 
-def score(args):
-    frame = pd.read_csv(args.data)
+def predict_frame(frame, model_dir):
+    """Apply saved preprocessing, model, scoring rule, and frozen thresholds."""
     validate_data(frame, labeled=False)
     # Only load locally generated, trusted artifacts: pickle can execute code.
-    with (args.model_dir / "preprocessing_and_baseline.pkl").open("rb") as handle:
+    with (model_dir / "preprocessing_and_baseline.pkl").open("rb") as handle:
         bundle = pickle.load(handle)
     if bundle["features"] != FEATURES:
         raise ValueError("Model feature schema does not match this version")
@@ -111,7 +111,7 @@ def score(args):
     x = x[:, bundle.get("feature_indices", list(range(len(FEATURES))))]
     model = Autoencoder(input_dim=x.shape[1], latent_dim=bundle.get("latent_dim", 8),
                         activation=bundle.get("activation", "relu"))
-    model.load_state_dict(torch.load(args.model_dir / "autoencoder.pt", weights_only=True,
+    model.load_state_dict(torch.load(model_dir / "autoencoder.pt", weights_only=True,
                                      map_location="cpu"))
     result = frame.copy()
     forest_x = bundle.get("forest_scaler", bundle["scaler"]).transform(feature_matrix(frame)).astype(np.float32)
@@ -120,9 +120,34 @@ def score(args):
                          "isolation_forest": -bundle["forest"].score_samples(forest_x)}.items():
         result[f"{name}_score"] = scores
         result[f"{name}_alert"] = scores > bundle["thresholds"][name]
+    return result, bundle["thresholds"]
+
+
+def score(args):
+    frame = pd.read_csv(args.data)
+    result, _ = predict_frame(frame, args.model_dir)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     result.to_csv(args.output, index=False)
     print(f"Saved scores for {len(frame):,} transactions to {args.output}")
+
+
+def evaluate_holdout(args):
+    frame = pd.read_csv(args.data)
+    validate_data(frame)
+    if set(frame.Class.unique()) != {0, 1}:
+        raise ValueError("Holdout evaluation requires both classes")
+    result, thresholds = predict_frame(frame, args.model_dir)
+    metrics = {name: evaluate(frame.Class, result[name + "_score"], thresholds[name])
+               for name in ("autoencoder", "isolation_forest")}
+    report = {"data_sha256": hashlib.sha256(args.data.read_bytes()).hexdigest(),
+              "model_directory": str(args.model_dir), "rows": len(frame),
+              "thresholds_refitted": False, "models": metrics,
+              "note": "Caller must ensure this labeled dataset is a genuinely fresh holdout."}
+    if args.output.exists():
+        raise ValueError("Choose a new output path to preserve prior evaluation")
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(json.dumps(report, indent=2) + "\n")
+    print(json.dumps(report, indent=2))
 
 
 def main():
@@ -144,6 +169,11 @@ def main():
     predict.add_argument("--model-dir", type=Path, required=True)
     predict.add_argument("--output", type=Path, default=Path("outputs/scored.csv"))
     predict.set_defaults(func=score)
+    holdout = sub.add_parser("evaluate", help="Evaluate a labeled holdout with frozen models and thresholds")
+    holdout.add_argument("--data", type=Path, required=True)
+    holdout.add_argument("--model-dir", type=Path, required=True)
+    holdout.add_argument("--output", type=Path, required=True)
+    holdout.set_defaults(func=evaluate_holdout)
     args = parser.parse_args()
     args.func(args)
 

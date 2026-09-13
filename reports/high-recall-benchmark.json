@@ -1,0 +1,343 @@
+{
+  "protocol": {
+    "minimum_recall": 0.7,
+    "max_fpr": 0.001,
+    "seed": 42,
+    "epochs": 60,
+    "model_configs": [
+      [
+        4,
+        2
+      ],
+      [
+        8,
+        2
+      ],
+      [
+        8,
+        4
+      ],
+      [
+        29,
+        8
+      ]
+    ],
+    "activations": [
+      "relu",
+      "tanh"
+    ],
+    "score_clips": [
+      null,
+      4,
+      9
+    ],
+    "calibration_budgets": [
+      0.00025,
+      0.0005,
+      0.00075,
+      0.001
+    ],
+    "forest_max_samples": [
+      256,
+      1024
+    ],
+    "feature_selection": "fitting-label average precision of absolute normal-standardized features",
+    "feature_ranking": [
+      {
+        "feature": "V14",
+        "fit_ap": 0.5678203947696534
+      },
+      {
+        "feature": "V17",
+        "fit_ap": 0.5554662163895253
+      },
+      {
+        "feature": "V12",
+        "fit_ap": 0.5325977689376524
+      },
+      {
+        "feature": "V16",
+        "fit_ap": 0.466102794719103
+      },
+      {
+        "feature": "V11",
+        "fit_ap": 0.4491316951426424
+      },
+      {
+        "feature": "V18",
+        "fit_ap": 0.37858412302966
+      },
+      {
+        "feature": "V4",
+        "fit_ap": 0.2558686393357143
+      },
+      {
+        "feature": "V3",
+        "fit_ap": 0.2535427623028683
+      },
+      {
+        "feature": "V10",
+        "fit_ap": 0.23032765893632595
+      },
+      {
+        "feature": "V7",
+        "fit_ap": 0.1295284745918365
+      },
+      {
+        "feature": "V9",
+        "fit_ap": 0.06417439062103611
+      },
+      {
+        "feature": "V5",
+        "fit_ap": 0.06229418867907842
+      },
+      {
+        "feature": "V1",
+        "fit_ap": 0.058951777611701686
+      },
+      {
+        "feature": "V2",
+        "fit_ap": 0.026516837171320945
+      },
+      {
+        "feature": "V19",
+        "fit_ap": 0.02649908332701304
+      },
+      {
+        "feature": "V8",
+        "fit_ap": 0.02286482199216877
+      },
+      {
+        "feature": "V27",
+        "fit_ap": 0.02059021374391834
+      },
+      {
+        "feature": "V21",
+        "fit_ap": 0.017582494978549062
+      },
+      {
+        "feature": "V28",
+        "fit_ap": 0.010707360105735088
+      },
+      {
+        "feature": "V25",
+        "fit_ap": 0.010657238870993315
+      },
+      {
+        "feature": "V6",
+        "fit_ap": 0.007228215439226713
+      },
+      {
+        "feature": "V23",
+        "fit_ap": 0.0069028811131320415
+      },
+      {
+        "feature": "V20",
+        "fit_ap": 0.005558127548251364
+      },
+      {
+        "feature": "V22",
+        "fit_ap": 0.0042107590554263585
+      },
+      {
+        "feature": "Amount",
+        "fit_ap": 0.004050210200123577
+      },
+      {
+        "feature": "V13",
+        "fit_ap": 0.002304042659533721
+      },
+      {
+        "feature": "V15",
+        "fit_ap": 0.0017665565315476786
+      },
+      {
+        "feature": "V26",
+        "fit_ap": 0.001733657964671835
+      },
+      {
+        "feature": "V24",
+        "fit_ap": 0.001642673593196434
+      }
+    ],
+    "test_status": "reused historical test; exploratory, not an independent holdout",
+    "selection_rule": "FPR eligibility, then recall, then precision, then average precision",
+    "dataset_sha256": "61171795e96ec102e4876a6809da8181dffd6d0d80a3fcce14d86a75643698e5",
+    "partitions": {
+      "fit": {
+        "rows": 136186,
+        "fraud": 258,
+        "time_min": 0.0,
+        "time_max": 81825.0
+      },
+      "early_stop": {
+        "rows": 34049,
+        "fraud": 84,
+        "time_min": 81826.0,
+        "time_max": 120392.0
+      },
+      "calibration": {
+        "rows": 28372,
+        "fraud": 24,
+        "time_min": 120393.0,
+        "time_max": 132905.0
+      },
+      "selection": {
+        "rows": 28373,
+        "fraud": 33,
+        "time_min": 132906.0,
+        "time_max": 145233.0
+      },
+      "test": {
+        "rows": 56746,
+        "fraud": 74,
+        "time_min": 145234.0,
+        "time_max": 172792.0
+      }
+    }
+  },
+  "models": {
+    "autoencoder": {
+      "selected": {
+        "model": "autoencoder",
+        "latent_dim": 2,
+        "activation": "relu",
+        "feature_indices": [
+          13,
+          16,
+          11,
+          15,
+          10,
+          17,
+          3,
+          2
+        ],
+        "input_features": [
+          "V14",
+          "V17",
+          "V12",
+          "V16",
+          "V11",
+          "V18",
+          "V4",
+          "V3"
+        ],
+        "score_clip": 9,
+        "calibration_budget": 0.0005,
+        "calibration": {
+          "threshold": 4.922752380371094,
+          "average_precision": 0.3478675394002438,
+          "roc_auc": 0.8952454023799445,
+          "recall": 0.625,
+          "precision": 0.5172413793103449,
+          "false_positive_rate": 0.0004938620008466206,
+          "alert_rate": 0.0010221344988016355,
+          "alerts": 29,
+          "false_alerts_per_10000": 4.934442408007895,
+          "true_positives": 15,
+          "false_positives": 14,
+          "false_negatives": 9,
+          "true_negatives": 28334
+        },
+        "selection": {
+          "threshold": 4.922752380371094,
+          "average_precision": 0.528551537135267,
+          "roc_auc": 0.9328543016616411,
+          "recall": 0.7878787878787878,
+          "precision": 0.5,
+          "false_positive_rate": 0.0009174311926605505,
+          "alert_rate": 0.001832728298029817,
+          "alerts": 52,
+          "false_alerts_per_10000": 9.163641490149086,
+          "true_positives": 26,
+          "false_positives": 26,
+          "false_negatives": 7,
+          "true_negatives": 28314
+        }
+      },
+      "test": {
+        "threshold": 4.922752380371094,
+        "average_precision": 0.6339287720951841,
+        "roc_auc": 0.9239829097166055,
+        "recall": 0.7162162162162162,
+        "precision": 0.6235294117647059,
+        "false_positive_rate": 0.000564652738565782,
+        "alert_rate": 0.0014979029358897543,
+        "alerts": 85,
+        "false_alerts_per_10000": 5.639163993937899,
+        "true_positives": 53,
+        "false_positives": 32,
+        "false_negatives": 21,
+        "true_negatives": 56640
+      }
+    },
+    "isolation_forest": {
+      "selected": {
+        "model": "isolation_forest",
+        "max_samples": 1024,
+        "feature_indices": [
+          13,
+          16,
+          11,
+          15
+        ],
+        "input_features": [
+          "V14",
+          "V17",
+          "V12",
+          "V16"
+        ],
+        "score_clip": null,
+        "calibration_budget": 0.001,
+        "calibration": {
+          "threshold": 0.7381025423356288,
+          "average_precision": 0.34874258487733384,
+          "roc_auc": 0.9350380391326842,
+          "recall": 0.5,
+          "precision": 0.3,
+          "false_positive_rate": 0.0009877240016932412,
+          "alert_rate": 0.0014098406880022557,
+          "alerts": 40,
+          "false_alerts_per_10000": 9.86888481601579,
+          "true_positives": 12,
+          "false_positives": 28,
+          "false_negatives": 12,
+          "true_negatives": 28320
+        },
+        "selection": {
+          "threshold": 0.7381025423356288,
+          "average_precision": 0.704923890084348,
+          "roc_auc": 0.9287702358803276,
+          "recall": 0.7272727272727273,
+          "precision": 0.6666666666666666,
+          "false_positive_rate": 0.0004234297812279464,
+          "alert_rate": 0.0012688118986360273,
+          "alerts": 36,
+          "false_alerts_per_10000": 4.229372995453423,
+          "true_positives": 24,
+          "false_positives": 12,
+          "false_negatives": 9,
+          "true_negatives": 28328
+        }
+      },
+      "test": {
+        "threshold": 0.7381025423356288,
+        "average_precision": 0.5962939826365339,
+        "roc_auc": 0.9705317083034474,
+        "recall": 0.5405405405405406,
+        "precision": 0.5405405405405406,
+        "false_positive_rate": 0.0005999435347261434,
+        "alert_rate": 0.0013040566735981391,
+        "alerts": 74,
+        "false_alerts_per_10000": 5.991611743559018,
+        "true_positives": 40,
+        "false_positives": 34,
+        "false_negatives": 34,
+        "true_negatives": 56638
+      }
+    }
+  },
+  "development_target_met": true,
+  "recall_target_observed_on_reused_test": true,
+  "beats_tuned_baseline_recall": true
+}

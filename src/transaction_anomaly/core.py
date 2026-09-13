@@ -108,14 +108,17 @@ def reconstruction_scores(model, x, batch_size=4096, score_clip=None):
 
 
 def train_autoencoder(x_train, x_val_normal, epochs=30, batch_size=512,
-                      learning_rate=1e-3, patience=5, seed=42, latent_dim=8, activation="relu"):
+                      learning_rate=1e-3, patience=5, seed=42, latent_dim=8, activation="relu",
+                      weight_decay=0.0, input_dropout=0.0):
+    if not 0 <= input_dropout < 1 or weight_decay < 0:
+        raise ValueError("Invalid training regularization")
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.use_deterministic_algorithms(True)
     torch.set_num_threads(2)
     model = Autoencoder(x_train.shape[1], latent_dim=latent_dim, activation=activation)
-    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
     loader = DataLoader(TensorDataset(torch.from_numpy(x_train)), batch_size=batch_size,
                         shuffle=True, generator=torch.Generator().manual_seed(seed))
     best_loss, stale, best_state = float("inf"), 0, None
@@ -125,7 +128,8 @@ def train_autoencoder(x_train, x_val_normal, epochs=30, batch_size=512,
         total = 0.0
         for (batch,) in loader:
             optimizer.zero_grad()
-            loss = ((model(batch) - batch) ** 2).mean()
+            corrupted = nn.functional.dropout(batch, p=input_dropout, training=True)
+            loss = ((model(corrupted) - batch) ** 2).mean()
             loss.backward()
             optimizer.step()
             total += loss.item() * len(batch)
@@ -166,6 +170,7 @@ def evaluate(y, scores, threshold):
         "threshold": threshold, "average_precision": float(average_precision_score(y, scores)),
         "roc_auc": float(roc_auc_score(y, scores)), "recall": float(tp / (tp + fn)),
         "precision": float(tp / (tp + fp)) if tp + fp else 0.0,
+        "f1": float(2 * tp / (2 * tp + fp + fn)) if 2 * tp + fp + fn else 0.0,
         "false_positive_rate": float(fp / (fp + tn)),
         "alert_rate": float((tp + fp) / len(y)), "alerts": int(tp + fp),
         "false_alerts_per_10000": float(fp / len(y) * 10000),
