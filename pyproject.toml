@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "transaction-anomaly-detector"
+version = "0.1.0"
+description = "Normal-only autoencoder and Isolation Forest fraud benchmark"
+requires-python = ">=3.10"
+dependencies = ["numpy>=1.26,<3", "pandas>=2.2,<4", "scikit-learn>=1.5,<2", "torch>=2.2,<3"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<10"]
+
+[project.scripts]
+transaction-anomaly = "transaction_anomaly.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

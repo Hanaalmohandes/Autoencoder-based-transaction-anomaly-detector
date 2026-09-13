@@ -1,0 +1,141 @@
+{
+  "dataset_sha256": "61171795e96ec102e4876a6809da8181dffd6d0d80a3fcce14d86a75643698e5",
+  "config": {
+    "seed": 42,
+    "split": "chronological",
+    "max_fpr": 0.001,
+    "epochs": 30,
+    "features": [
+      "V1",
+      "V2",
+      "V3",
+      "V4",
+      "V5",
+      "V6",
+      "V7",
+      "V8",
+      "V9",
+      "V10",
+      "V11",
+      "V12",
+      "V13",
+      "V14",
+      "V15",
+      "V16",
+      "V17",
+      "V18",
+      "V19",
+      "V20",
+      "V21",
+      "V22",
+      "V23",
+      "V24",
+      "V25",
+      "V26",
+      "V27",
+      "V28",
+      "Amount"
+    ]
+  },
+  "versions": {
+    "python": "3.12.14",
+    "torch": "2.14.0",
+    "sklearn": "1.9.1",
+    "numpy": "2.5.3",
+    "pandas": "3.0.5"
+  },
+  "duplicates_removed": 1081,
+  "splits": {
+    "train": {
+      "rows": 170235,
+      "fraud": 342,
+      "time_min": 0.0,
+      "time_max": 120392.0
+    },
+    "validation": {
+      "rows": 56745,
+      "fraud": 57,
+      "time_min": 120393.0,
+      "time_max": 145233.0
+    },
+    "test": {
+      "rows": 56746,
+      "fraud": 74,
+      "time_min": 145234.0,
+      "time_max": 172792.0
+    }
+  },
+  "normal_training_rows": 169893,
+  "models": {
+    "autoencoder": {
+      "validation": {
+        "threshold": 20.736719131469727,
+        "average_precision": 0.06952298244986692,
+        "roc_auc": 0.948328121673079,
+        "recall": 0.017543859649122806,
+        "precision": 0.017543859649122806,
+        "false_positive_rate": 0.0009878633926051368,
+        "alert_rate": 0.0010044937879989425,
+        "alerts": 57,
+        "false_alerts_per_10000": 9.868710899638735,
+        "true_positives": 1,
+        "false_positives": 56,
+        "false_negatives": 56,
+        "true_negatives": 56632
+      },
+      "test": {
+        "threshold": 20.736719131469727,
+        "average_precision": 0.1590785925087101,
+        "roc_auc": 0.9364150464693943,
+        "recall": 0.0,
+        "precision": 0.0,
+        "false_positive_rate": 0.00037055335968379444,
+        "alert_rate": 0.0003700701371021746,
+        "alerts": 21,
+        "false_alerts_per_10000": 3.7007013710217462,
+        "true_positives": 0,
+        "false_positives": 21,
+        "false_negatives": 74,
+        "true_negatives": 56651
+      }
+    },
+    "isolation_forest": {
+      "validation": {
+        "threshold": 0.6843027114054326,
+        "average_precision": 0.023213689938223713,
+        "roc_auc": 0.9366371669365341,
+        "recall": 0.0,
+        "precision": 0.0,
+        "false_positive_rate": 0.0009878633926051368,
+        "alert_rate": 0.0009868710899638734,
+        "alerts": 56,
+        "false_alerts_per_10000": 9.868710899638735,
+        "true_positives": 0,
+        "false_positives": 56,
+        "false_negatives": 57,
+        "true_negatives": 56632
+      },
+      "test": {
+        "threshold": 0.6843027114054326,
+        "average_precision": 0.041052743112915686,
+        "roc_auc": 0.9506486829856395,
+        "recall": 0.0,
+        "precision": 0.0,
+        "false_positive_rate": 0.0005999435347261434,
+        "alert_rate": 0.0005991611743559018,
+        "alerts": 34,
+        "false_alerts_per_10000": 5.991611743559018,
+        "true_positives": 0,
+        "false_positives": 34,
+        "false_negatives": 74,
+        "true_negatives": 56638
+      }
+    }
+  },
+  "comparison": {
+    "recall_difference": 0.0,
+    "autoencoder_within_test_fpr_budget": true,
+    "baseline_within_test_fpr_budget": true,
+    "target_observed_on_this_split": false
+  }
+}
